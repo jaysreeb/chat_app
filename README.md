@@ -10,6 +10,6 @@ A real-time chat application built with Node.js, TypeScript, PostgreSQL and WebS
 - Docker + Docker Compose
 
 ## Running locally
-git clone git@github.com:jaysreeb/chat_app.git
-cd chat_app
-docker compose up --build
+- git clone git@github.com:jaysreeb/chat_app.git
+- cd chat_app
+- docker compose up --build
