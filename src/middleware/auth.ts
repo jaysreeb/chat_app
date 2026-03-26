@@ -22,5 +22,11 @@ export const authenticateToken = (
 		const decoded = jwt.verify(
 			token,
 			process.env.JWT_SECRET as string
-		) as {userId: number; email: string}
-	}	
+		) as {userId: number; email: string};
+		req.userId = decoded.userId;
+		req.email = decoded.email;
+		next();
+	}catch(err){
+		return res.status(403).json({error: 'Invaluid or expired token'});
+	}
+};
