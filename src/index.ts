@@ -1,6 +1,8 @@
 import express, {Response} from 'express';
 import authRoutes from './routes/auth';
 import { AuthRequest, authenticateToken} from './middleware/auth';
+import { createServer } from 'node:http';
+import {initWebSocketServer} from './websocket/server'
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +22,10 @@ app.get('/api/me', authenticateToken, (req: AuthRequest, res:Response) => {
     email: req.email,
   });
 });
+
+// Create HTTP server and attach WebSocket to it
+const server = createServer(app);
+initWebSocketServer(server);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
