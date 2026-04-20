@@ -9,14 +9,13 @@ interface ConnectedClient {
     email: string;
     socket: WebSocket;
 }
-
-// Shape of message we receive
-interface IncomingMessages {
+// Shape of the message
+interface IncomingMessage2 {
     type: 'message';
     to: number;
     content: string;
 }
-// The connection registry — userId → client
+// The connection registry
 const clients = new Map<number, ConnectedClient>();
 
 export function initWebSocketServer(server:Server){
@@ -25,8 +24,8 @@ export function initWebSocketServer(server:Server){
     wss.on('connection', (socket: WebSocket, req: IncomingMessage) => {
     // 1. Extract token from query string
     // Client connects as: ws://localhost:3000?token=eyJhbG...
-        const url = new URL(req.url!, 'http://${req.header.host}');
-
+        console.log("CONNECTED");
+        const url = new URL(req.url!, 'http://${req.headers.host}');
         const token = url.searchParams.get('token');
 
         if(!token){
@@ -44,16 +43,66 @@ export function initWebSocketServer(server:Server){
             socket.close(1000, 'Invaid token');
             return;            
         }
+
+        const {userId, email} = decoded;
+
         // 3. Register the Connection
-        // 4. Tell the user they're connected
-        // 5. Handle Incoming messages
-        // 6. Handle disconnect
-        // 7. If recipient is online, deliver immediately
+        clients.set(userId, {userId, email, socket});
+        console.log(`User ${email} connected. Online: ${clients.size}`);
+
+        // 4.Tell the user they're connected
+        socket.send(JSON.stringify({
+            type: 'connected',
+            message: 'Connected Successfully',
+        }))
+        // 5.Handle Incoming messages
+        socket.on('message', (data) =>{
+        try{
+            const parsed: IncomingMessage2 = JSON.parse(data.toString());
+            
+            if(parsed.type === 'message'){
+                handleMessage(userId, parsed);
+            }
+        }catch(err){
+            socket.send(JSON.stringify({type:'error', message:'Invalid message format'}))
+        }
+        });
+        // 6.Handle disconnect
+        socket.on('close', () => {
+            clients.delete(userId);
+            console.log(`User ${email} disconnected. Online: ${clients.size}`);
+        });
+         console.log('WebSocket server initialized');
+    });
+}
+
+function handleMessage(senderId: number, msg: IncomingMessage2){
+    const sender = clients.get(senderId);
+    const recipient = clients.get(msg.to);
+
+    if(!sender) return;
+
+    // 7. If recipient is online, deliver immediately
+    if(recipient && recipient.socket.readyState === WebSocket.OPEN){
+        recipient.socket.send(JSON.stringify({
+            type: 'message',
+            from: senderId,
+            content: msg.content,
+            timestamp: new Date().toISOString(),
+        }));
         // Confirm delivery to sender
+        sender.socket.send(JSON.stringify({
+        type: 'delivered',
+        to: msg.to,
+        content: msg.content,
+    }));
+    }else{
         // 8. Recipient offline — tell sender
-        // Next step: persist to PostgreSQL
-
-
-    })
+        sender.socket.send(JSON.stringify({
+            type: 'queued',
+            message: 'USer is offline. Message will be delivered once online',
+        }))        
+    } 
+    // Next step: persist to PostgreSQL
 }
 

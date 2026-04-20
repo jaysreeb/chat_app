@@ -23,10 +23,10 @@ app.get('/api/me', authenticateToken, (req: AuthRequest, res:Response) => {
   });
 });
 
-// Create HTTP server and attach WebSocket to it
+// web socket server created
 const server = createServer(app);
 initWebSocketServer(server);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

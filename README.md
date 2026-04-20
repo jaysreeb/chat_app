@@ -23,5 +23,5 @@ A real-time chat application built with Node.js, TypeScript, PostgreSQL and WebS
  - 6. Handle disconnect
  - 7. If recipient is online, deliver immediately
  - 8. Confirm delivery to sender
- - 9. Recipient offline — tell sender
+ - 9. Recipient offline (tell sender)
  - 10. Next step: persist to PostgreSQL
