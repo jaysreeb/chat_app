@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS messages (
   delivered   BOOLEAN DEFAULT FALSE,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+
