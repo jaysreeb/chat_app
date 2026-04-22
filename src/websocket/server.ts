@@ -52,6 +52,7 @@ export function initWebSocketServer(server:Server){
         }))
 
         const undelivered = await getUndeliveredMessages(userId);
+        
         if(undelivered.length > 0){
             for (const msg of undelivered){
                 socket.send(JSON.stringify({
@@ -77,6 +78,7 @@ export function initWebSocketServer(server:Server){
                 await handleMessage(userId, parsed);
             }
         }catch(err){
+            console.error('Message handler error:', err); 
             socket.send(JSON.stringify({type:'error', message:'Invalid message format'}))
         }
         });

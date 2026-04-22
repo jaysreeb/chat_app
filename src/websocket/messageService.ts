@@ -6,7 +6,7 @@ export async function saveMessage(
     content : string
 ):Promise<number>{
     const result = await pool.query(
-        `INSERT INTO messages (sender_id, received_id, content, delivered) 
+        `INSERT INTO messages (sender_id, receiver_id, content, delivered) 
         VALUES ($1, $2, $3, $4) RETURNING id`,
         [senderId, receivedId, content, false]
     );
