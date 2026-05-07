@@ -8,6 +8,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - chatnet
 
   postgres:
     image: postgres:16-alpine
@@ -25,6 +27,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - chatnet
 
 volumes:
   postgres_data:
+
+networks:
+  chatnet:
+    driver: bridge

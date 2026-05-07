@@ -1,12 +1,15 @@
 import express, {Response} from 'express';
 import authRoutes from './routes/auth';
+import path from 'path';
 import { AuthRequest, authenticateToken} from './middleware/auth';
 import { createServer } from 'node:http';
-import {initWebSocketServer} from './websocket/server'
+import {initWebSocketServer} from './websocket/server';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);

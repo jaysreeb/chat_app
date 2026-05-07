@@ -36,7 +36,7 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'Email already in use' });
     }
     console.error(err);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error, I am causing issues from last few days' });
   }
 });
 
@@ -81,7 +81,7 @@ router.post('/login', async (req: Request, res: Response) =>{
     
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal server error'});    
+    return res.status(500).json({ error: 'Internal server error- I am from the login dumb dept'});    
   }
 });
 
