@@ -7,7 +7,7 @@ A real-time chat application built with Node.js, TypeScript, PostgreSQL, and raw
 
 - Register and login with email and password
 - Real-time one-to-one messaging over WebSockets
-- Messages persist to PostgreSQL — offline users receive them on reconnect
+- Messages persist to PostgreSQL, offline users receive them on reconnect
 - JWT authentication on both HTTP routes and the WebSocket handshake
 - Rate limiting per user (in progress)
 - Fully containerised with Docker
@@ -64,7 +64,7 @@ const clients = new Map<number, ConnectedClient>();
 
 This is the answer to "who is online right now?" Every incoming WebSocket connection is registered here. Every disconnect removes the entry. When a message arrives, the server checks this Map to decide whether to deliver immediately or queue in PostgreSQL.
 
-This is an in-memory structure — it lives inside the Node.js process. It is fast. It is also the architectural boundary: it will break if scaled beyond single server. The solution at scale is Redis pub/sub, where all server instances subscribe to a shared channel. That is documented in the Scaling section below.
+This is an in-memory structure, it lives inside the Node.js process. It is fast. It is also the architectural boundary: it will break if scaled beyond single server. The solution at scale is Redis pub/sub, where all server instances subscribe to a shared channel. That is documented in the Scaling section below.
 
 ---
 
@@ -275,14 +275,18 @@ These are the primary sources used to build this project:
 
 ## What I learned building this
 
-Working without Socket.io forced me to understand the WebSocket upgrade handshake, how browsers negotiate protocol switches over HTTP, and why persistent connections are fundamentally different from request-response. The connection registry problem — how does a server know which socket belongs to which user — turned out to be the core design challenge, and solving it in memory first made the scaling limitation obvious: the Map is the bottleneck, Redis is the answer.
+Working without Socket.io forced me to understand the WebSocket upgrade handshake, how browsers negotiate protocol switches over HTTP, and why persistent connections are fundamentally different from request-response. The connection registry problem , how does a server know which socket belongs to which user, turned out to be the core design challenge, and solving it in memory first made the scaling limitation obvious: the Map is the bottleneck, Redis is the answer.
 
 Writing every SQL query by hand rather than using an ORM made the `delivered = false` index opportunity visible. With an ORM you describe what you want; with raw SQL you see what the database is actually doing.
 
 ---
+## Frontend
+  
 
-## Features to add 
+## Next 
     1. Rate limiter        
+
+## Features to Add
     2. Heartbeat           
     3. Message status     
     4. Structured logging 
