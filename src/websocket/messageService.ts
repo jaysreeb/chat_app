@@ -22,12 +22,13 @@ export async function markDelivered(messageId:number): Promise<void>{
 
 export async function getUndeliveredMessages(userId:number) {
     const result = await pool.query(
-        `SELECT m.id, m.sender_id, m.content, m.created_at
+        `SELECT m.id, m.sender_id, m.content, m.created_at, u.username as from_username
         FROM messages m
-        WHERE m.receiver_id = $1
-        AND m.delivered = false
+        JOIN users u ON u.id = m.sender_id
+        WHERE m.receiver_id = $1 AND m.delivered = false
         ORDER BY m.created_at ASC`,
         [userId]
     );
+    console.log('Undelivered rows:', result.rows);
     return result.rows;    
 }

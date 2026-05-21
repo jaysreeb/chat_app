@@ -1,11 +1,10 @@
+//Middleware to protect routes
 import {Request, Response, NextFunction} from 'express';
 import jwt from 'jsonwebtoken';
-
-//Middleware to protect routes
-
 export interface AuthRequest extends Request{
 	userId?: number;
 	email?: string;
+	username?: string;
 }
 
 export const authenticateToken = (
@@ -22,9 +21,10 @@ export const authenticateToken = (
 		const decoded = jwt.verify(
 			token,
 			process.env.JWT_SECRET as string
-		) as {userId: number; email: string};
+		) as {userId: number; email: string; username: string};
 		req.userId = decoded.userId;
 		req.email = decoded.email;
+		req.username = decoded.username;
 		next();
 	}catch(err){
 		return res.status(403).json({error: 'Invalid or expired token'});

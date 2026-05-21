@@ -3,14 +3,13 @@ import bcrypt from 'bcrypt';
 import pool from '../db';
 import jwt from 'jsonwebtoken';
 
-
 const router = Router();
 
 router.post('/register', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password ||!username) {
+    return res.status(400).json({ error: 'All the fields are required!'});
   }
 
   if (password.length < 8) {
@@ -20,10 +19,10 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users (email, password)
-       VALUES ($1, $2)
-       RETURNING id, email, created_at`,
-      [email, hashedPassword]
+      `INSERT INTO users (email,username, password)
+       VALUES ($1, $2, $3)
+       RETURNING id, email,username, created_at`,
+      [email,username, hashedPassword]
     );
 
     return res.status(201).json({
@@ -33,10 +32,10 @@ router.post('/register', async (req: Request, res: Response) => {
 
   } catch (err: any) {
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'Email already in use' });
+      return res.status(409).json({ error: 'Email or username already in use' });
     }
     console.error(err);
-    return res.status(500).json({ error: 'Internal server error, I am causing issues from last few days' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -65,7 +64,7 @@ router.post('/login', async (req: Request, res: Response) =>{
     }
     // Sign a JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email},
+      { userId: user.id, email: user.email, username: user.username},
       process.env.JWT_SECRET as string,
       {expiresIn: '24h'}
     );
@@ -76,12 +75,13 @@ router.post('/login', async (req: Request, res: Response) =>{
       user:{
         id: user.id,
         email: user.email,
+        username: user.username,
       }
     });   
     
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Internal server error- I am from the login dumb dept'});    
+    return res.status(500).json({ error: 'There is a problem while authenticating the user' });    
   }
 });
 

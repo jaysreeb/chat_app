@@ -7,6 +7,7 @@ import { markDelivered, saveMessage, getUndeliveredMessages} from './messageServ
 interface ConnectedClient {
     userId: number;
     email: string;
+    username: string;
     socket: WebSocket;
 }
 interface IncomingMessage2 {
@@ -30,21 +31,21 @@ export function initWebSocketServer(server:Server){
             return;
         }
 
-        let decoded: {userId: number; email: string};
+        let decoded: {userId: number; email: string; username: string};
         try {
             decoded = jwt.verify(
                 token,
                 process.env.JWT_SECRET as string
-            ) as {userId: number; email: string};            
+            ) as {userId: number; email: string; username: string};            
         } catch (err) {
-            socket.close(1000, 'Invaid token');
+            socket.close(1000, 'Invalid token');
             return;            
         }
 
-        const {userId, email} = decoded;
+        const {userId, email, username} = decoded;
 
-        clients.set(userId, {userId, email, socket});
-        console.log(`User ${email} connected. Online: ${clients.size}`);
+        clients.set(userId, {userId, email, username, socket});
+        // console.log(`User ${email} connected. Online: ${clients.size}`);
 
         socket.send(JSON.stringify({
             type: 'connected',
@@ -103,6 +104,7 @@ async function handleMessage(senderId: number, msg: IncomingMessage2){
         recipient.socket.send(JSON.stringify({
             type: 'message',
             from: senderId,
+            fromUsername: sender.username,
             content: msg.content,
             timestamp: new Date().toISOString(),
         }));

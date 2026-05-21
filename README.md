@@ -55,16 +55,16 @@ They share the same PostgreSQL connection pool. The WebSocket server does not re
 
 ### The connection registry
 
-The most important data structure in the app is a JavaScript `Map`:
+The Javascript `Map` is used for connections:
 
 ```typescript
 const clients = new Map<number, ConnectedClient>();
 // userId → { socket, email }
 ```
 
-This is the answer to "who is online right now?" Every incoming WebSocket connection is registered here. Every disconnect removes the entry. When a message arrives, the server checks this Map to decide whether to deliver immediately or queue in PostgreSQL.
+This keeps a track of who is online right now. Every incoming WebSocket connection is registered here. Every disconnect removes the entry. When a message arrives, the server checks this Map to decide whether to deliver immediately or queue in PostgreSQL.
 
-This is an in-memory structure, it lives inside the Node.js process. It is fast. It is also the architectural boundary: it will break if scaled beyond single server. The solution at scale is Redis pub/sub, where all server instances subscribe to a shared channel. That is documented in the Scaling section below.
+This is an in-memory structure, it lives inside the Node.js process. It is fast. It is also the architectural boundary: it will break if scaled beyond single server. The solution at scale is Redis pub/sub, where all server instances subscribe to a shared channel.
 
 ---
 
@@ -74,9 +74,9 @@ This is an in-memory structure, it lives inside the Node.js process. It is fast.
 POST /register
     │
     ├── Validate input (email format, password length)
-    ├── bcrypt.hash(password, 10)          ← intentionally slow
+    ├── bcrypt.hash(password, 10)          
     ├── INSERT INTO users ...              ← UNIQUE constraint on email
-    └── 201 + { id, email, created_at }   ← never return password
+    └── 201 + { id, email, created_at }  
 
 POST /login
     │
@@ -86,14 +86,13 @@ POST /login
     └── 200 + { token, user }
 ```
 
-**Why "invalid credentials" for both wrong email and wrong password?**  
-Returning "user not found" vs "wrong password" tells an attacker which emails are valid. Always return the same error for both cases.
-
 **Why bcrypt with saltRounds = 10?**  
-MD5 and SHA256 are designed to be fast. Fast is bad for passwords, an attacker with a stolen database can try billions of combinations per second. bcrypt does 1024 iterations (2^10). A brute-force attack that would take hours against SHA256 takes years against bcrypt.
+Unlike fast algorithms (MD5, SHA-256) which allow attackers to guess billions of passwords per second, **bcrypt** is an adaptive, slow-hashing function. 
+Setting `saltRounds = 10` forces bcrypt to run its internal key-setup loop $2^{10}$ (1,024) times. This adds a tiny ~100ms delay per login for users, but makes brute-force attacks mathematically unfeasible for attackers.
+
 
 **Why JWT instead of sessions?**  
-Sessions store state on the server, every request hits the database to validate the session. JWT is stateless, the token carries the user's identity, signed with a secret. The server just verifies the signature. No database hit. The tradeoff: you cannot invalidate a JWT before it expires, which is why `expiresIn: '24h'` matters.
+Sessions store state on the server, every request hits the database to validate the session. JWT is stateless, the token carries the user's identity, signed with a secret. The server just verifies the signature. No database hit. The tradeoff: you cannot invalidate a JWT before it expires, which is why `expiresIn: '24h'` is important.
 
 ---
 
@@ -194,7 +193,7 @@ docker-compose.yml
 Without the healthcheck condition, Docker starts the Node.js container the moment the Postgres container starts, but Postgres takes a few seconds to be ready to accept connections. The app would crash trying to connect before Postgres is up. The healthcheck (`pg_isready`) makes Docker wait until Postgres is actually accepting connections.
 
 **Why a named volume for postgres_data?**  
-Without the volume, every `docker compose down` wipes the database. The named volume persists the data between restarts. `docker compose down -v` removes it — useful when you want a clean slate during development.
+Without the volume, every `docker compose down` wipes the database. The named volume persists the data between restarts. `docker compose down -v` removes it,This is useful when you want a clean slate during development.
 
 
 ---
@@ -231,7 +230,6 @@ A partial index on only undelivered messages, its small, fast, directly serves t
 ```bash
 git clone https://github.com/jaysreeb/chat_app_backend.git
 cd chat_app_backend
-cp .env.example .env
 docker compose up --build
 ```
 
@@ -248,6 +246,7 @@ chat-app/
     db.ts                 — PostgreSQL connection pool
     routes/
       auth.ts             — /register and /login endpoints
+      users.ts            — /user Profile
     middleware/
       auth.ts             — JWT verification middleware
     websocket/
@@ -275,14 +274,11 @@ These are the primary sources used to build this project:
 
 ## What I learned building this
 
-Working without Socket.io forced me to understand the WebSocket upgrade handshake, how browsers negotiate protocol switches over HTTP, and why persistent connections are fundamentally different from request-response. The connection registry problem , how does a server know which socket belongs to which user, turned out to be the core design challenge, and solving it in memory first made the scaling limitation obvious: the Map is the bottleneck, Redis is the answer.
+Working without Socket.io forced me to understand the WebSocket upgrade handshake, how browsers negotiate protocol switches over HTTP, and why persistent connections are fundamentally different from request-response. The connection registry problem , how does a server know which socket belongs to which user, turned out to be the core design challenge, and solving it in memory first made the scaling limitation obvious: the Map is the bottleneck which Redis can solve.
 
 Writing every SQL query by hand rather than using an ORM made the `delivered = false` index opportunity visible. With an ORM you describe what you want; with raw SQL you see what the database is actually doing.
 
 ---
-## Frontend
-  
-
 ## Next 
     1. Rate limiter        
 
