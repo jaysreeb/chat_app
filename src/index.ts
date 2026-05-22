@@ -7,19 +7,13 @@ import {initWebSocketServer} from './websocket/server';
 import cors from 'cors';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.FRONTEND_URL || 3000;
 
-app.use(cors(
-  {
-  origin: (origin, callback) => {
-    if (!origin || origin.startsWith('http://localhost')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
+
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
