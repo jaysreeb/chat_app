@@ -1,9 +1,10 @@
 import { Pool } from 'pg';
-
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+  host: 'postgres',
+  user: 'postgres',
+  password: 'postgres',
+  database: 'chatapp',
+  port: 5432,
+})
 
-console.log('DATABASE_URL starts with:', process.env.DATABASE_URL?.substring(0, 30));
 export default pool;
